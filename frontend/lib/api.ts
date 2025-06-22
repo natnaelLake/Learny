@@ -1,5 +1,8 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://learny-tmll.onrender.com/api';
 
+console.log('API_BASE_URL:', API_BASE_URL);
+console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
