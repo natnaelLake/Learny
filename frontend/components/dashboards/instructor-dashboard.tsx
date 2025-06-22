@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,45 +9,113 @@ import { Header } from "@/components/header"
 import Link from "next/link"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-
-const myCourses = [
-  {
-    id: "1",
-    title: "Complete React Development Course",
-    students: 1234,
-    revenue: 12340,
-    status: "published",
-    rating: 4.8,
-    lastUpdated: "2 days ago",
-  },
-  {
-    id: "2",
-    title: "Advanced JavaScript Concepts",
-    students: 856,
-    revenue: 8560,
-    status: "published",
-    rating: 4.9,
-    lastUpdated: "1 week ago",
-  },
-  {
-    id: "3",
-    title: "Node.js Backend Development",
-    students: 0,
-    revenue: 0,
-    status: "draft",
-    rating: 0,
-    lastUpdated: "3 days ago",
-  },
-]
-
-const recentStudents = [
-  { name: "Alice Johnson", course: "Complete React Development Course", enrolled: "2 hours ago" },
-  { name: "Bob Smith", course: "Advanced JavaScript Concepts", enrolled: "5 hours ago" },
-  { name: "Carol Davis", course: "Complete React Development Course", enrolled: "1 day ago" },
-  { name: "David Wilson", course: "Advanced JavaScript Concepts", enrolled: "2 days ago" },
-]
+import { api, ApiError } from "@/lib/api"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
 
 export function InstructorDashboard() {
+  const [courses, setCourses] = useState<any[]>([])
+  const [enrollments, setEnrollments] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Stats
+  const [totalStudents, setTotalStudents] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
+  const [publishedCourses, setPublishedCourses] = useState(0)
+  const [draftCourses, setDraftCourses] = useState(0)
+  const [avgRating, setAvgRating] = useState(0)
+  const [recentStudents, setRecentStudents] = useState<any[]>([])
+  const [enrollmentTrends, setEnrollmentTrends] = useState<any[]>([])
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      // Fetch instructor's courses
+      const coursesRes = await api.getInstructorCourses()
+      if (!coursesRes.success || !coursesRes.data) throw new Error("Failed to fetch courses")
+      setCourses(coursesRes.data)
+
+      // Aggregate stats
+      let students = 0
+      let revenue = 0
+      let published = 0
+      let draft = 0
+      let ratingSum = 0
+      let ratingCount = 0
+      let allEnrollments: any[] = []
+      let allRecent: any[] = []
+      let enrollmentsByMonth: Record<string, number> = {}
+      const now = new Date()
+      for (const course of coursesRes.data) {
+        if (course.status === "published") published++
+        if (course.status === "draft") draft++
+        if (course.rating && course.reviewCount > 0) {
+          ratingSum += course.rating * course.reviewCount
+          ratingCount += course.reviewCount
+        }
+        students += course.enrollmentCount || 0
+        revenue += (course.price || 0) * (course.enrollmentCount || 0)
+        // Fetch enrollments for each course
+        try {
+          const enrollmentsRes = await api.getCourseEnrollments(course._id)
+          if (enrollmentsRes.success && enrollmentsRes.data) {
+            allEnrollments.push(...enrollmentsRes.data)
+            // Recent students (last 5)
+            const sorted = [...enrollmentsRes.data].sort((a, b) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime())
+            allRecent.push(...sorted.slice(0, 2))
+            // Enrollment trends (by month)
+            for (const enr of enrollmentsRes.data) {
+              const d = new Date(enr.enrolledAt)
+              const key = `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}`
+              enrollmentsByMonth[key] = (enrollmentsByMonth[key] || 0) + 1
+            }
+          }
+        } catch (e) { /* ignore per-course errors */ }
+      }
+      setTotalStudents(students)
+      setTotalRevenue(revenue)
+      setPublishedCourses(published)
+      setDraftCourses(draft)
+      setAvgRating(ratingCount > 0 ? (ratingSum / ratingCount) : 0)
+      setRecentStudents(allRecent.slice(0, 5))
+      // Prepare chart data for last 6 months
+      const chartData = []
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const key = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}`
+        chartData.push({
+          month: date.toLocaleString('default', { month: 'short', year: '2-digit' }),
+          enrollments: enrollmentsByMonth[key] || 0
+        })
+      }
+      setEnrollmentTrends(chartData)
+    } catch (err: any) {
+      setError(err.message || "Failed to load dashboard data")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span>Loading dashboard...</span>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        {error}
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* <Header /> */}
@@ -75,8 +144,8 @@ export function InstructorDashboard() {
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2,090</div>
-                <p className="text-xs text-muted-foreground">+12% from last month</p>
+                <div className="text-2xl font-bold">{totalStudents}</div>
+                <p className="text-xs text-muted-foreground">Across all your courses</p>
               </CardContent>
             </Card>
 
@@ -86,8 +155,8 @@ export function InstructorDashboard() {
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">$20,900</div>
-                <p className="text-xs text-muted-foreground">+8% from last month</p>
+                <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">From enrollments</p>
               </CardContent>
             </Card>
 
@@ -97,8 +166,8 @@ export function InstructorDashboard() {
                 <BookOpen className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">8</div>
-                <p className="text-xs text-muted-foreground">2 in draft</p>
+                <div className="text-2xl font-bold">{publishedCourses}</div>
+                <p className="text-xs text-muted-foreground">{draftCourses} in draft</p>
               </CardContent>
             </Card>
 
@@ -108,11 +177,30 @@ export function InstructorDashboard() {
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">4.8</div>
-                <p className="text-xs text-muted-foreground">+0.2 from last month</p>
+                <div className="text-2xl font-bold">{avgRating.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground">Average across all courses</p>
               </CardContent>
             </Card>
           </div>
+
+          {/* Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Enrollment Trends (Last 6 Months)</CardTitle>
+              <CardDescription>Track your student growth over time</CardDescription>
+            </CardHeader>
+            <CardContent style={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={enrollmentTrends} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="enrollments" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* My Courses */}
@@ -134,16 +222,16 @@ export function InstructorDashboard() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {myCourses.map((course) => (
-                        <TableRow key={course.id}>
+                      {courses.map((course) => (
+                        <TableRow key={course._id}>
                           <TableCell>
                             <div>
                               <div className="font-medium">{course.title}</div>
-                              <div className="text-sm text-muted-foreground">Updated {course.lastUpdated}</div>
+                              <div className="text-sm text-muted-foreground">Updated {new Date(course.updatedAt).toLocaleDateString()}</div>
                             </div>
                           </TableCell>
-                          <TableCell>{course.students.toLocaleString()}</TableCell>
-                          <TableCell>${course.revenue.toLocaleString()}</TableCell>
+                          <TableCell>{course.enrollmentCount?.toLocaleString() || 0}</TableCell>
+                          <TableCell>${((course.price || 0) * (course.enrollmentCount || 0)).toLocaleString()}</TableCell>
                           <TableCell>
                             <Badge variant={course.status === "published" ? "default" : "secondary"}>
                               {course.status}
@@ -158,13 +246,13 @@ export function InstructorDashboard() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/courses/${course.id}`}>
+                                  <Link href={`/courses/${course._id}`}>
                                     <Users className="w-4 h-4 mr-2" />
                                     View Course
                                   </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
-                                  <Link href={`/instructor/courses/${course.id}/edit`}>
+                                  <Link href={`/instructor/courses/${course._id}/edit`}>
                                     <Edit className="w-4 h-4 mr-2" />
                                     Edit Course
                                   </Link>
@@ -189,15 +277,17 @@ export function InstructorDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {recentStudents.map((student, index) => (
+                    {recentStudents.length === 0 ? (
+                      <div className="text-muted-foreground text-sm">No recent enrollments</div>
+                    ) : recentStudents.map((student, index) => (
                       <div key={index} className="flex items-start space-x-3">
                         <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
                           <Users className="w-4 h-4" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium">{student.name}</p>
-                          <p className="text-xs text-muted-foreground">{student.course}</p>
-                          <p className="text-xs text-muted-foreground">{student.enrolled}</p>
+                          <p className="text-sm font-medium">{student.student?.name || "Unknown"}</p>
+                          <p className="text-xs text-muted-foreground">{student.course?.title || "Unknown Course"}</p>
+                          <p className="text-xs text-muted-foreground">{new Date(student.enrolledAt).toLocaleString()}</p>
                         </div>
                       </div>
                     ))}

@@ -65,7 +65,8 @@ router.post('/register', [
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
@@ -130,7 +131,8 @@ router.post('/login', [
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        avatar: user.avatar,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
@@ -155,7 +157,8 @@ router.get('/me', protect, async (req, res, next) => {
         avatar: user.avatar,
         bio: user.bio,
         instructorProfile: user.instructorProfile,
-        studentProfile: user.studentProfile
+        studentProfile: user.studentProfile,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
@@ -215,7 +218,8 @@ router.put('/profile', protect, [
         email: user.email,
         role: user.role,
         avatar: user.avatar,
-        bio: user.bio
+        bio: user.bio,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {

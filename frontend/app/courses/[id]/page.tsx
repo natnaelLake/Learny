@@ -61,6 +61,7 @@ interface Course {
   }>
   isEnrolled?: boolean
   enrollmentId?: string
+  isPublished?: boolean
 }
 
 export default function CoursePage() {
@@ -120,6 +121,44 @@ export default function CoursePage() {
 
     setShowPaymentModal(true)
   }
+
+  const handleUnenroll = async () => {
+    if (!course?.isEnrolled || !course.enrollmentId) {
+      toast({
+        title: "Error",
+        description: "You are not enrolled in this course.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Simple confirmation, a modal would be better for UX
+    if (!window.confirm("Are you sure you want to unenroll from this course? This action cannot be undone.")) {
+      return;
+    }
+
+    try {
+      await api.unenrollFromCourse(course.enrollmentId);
+      
+      toast({
+        title: "Unenrolled successfully",
+        description: "You have been unenrolled from this course.",
+      });
+
+      // Refresh course data to reflect the change
+      const response = await api.getCourse(courseId);
+      if (response.success && response.data) {
+        setCourse(response.data);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof ApiError ? error.message : 'Unenrollment failed';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
 
   const handlePaymentSuccess = async () => {
     try {
@@ -199,6 +238,25 @@ export default function CoursePage() {
         </div>
       </div>
     )
+  }
+
+  // If course is not published, only allow instructor or admin to view it
+  if (!course.isPublished && user?.role !== 'admin' && user?.id !== course.instructor._id) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container py-8">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">Course Not Available</h2>
+            <p className="text-muted-foreground mb-6">
+              This course is not currently available for enrollment.
+            </p>
+            <Button onClick={() => window.history.back()}>
+              Go back
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const totalLessons = (course.sections || []).reduce((total, section) => 
@@ -333,83 +391,99 @@ export default function CoursePage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            {course.isEnrolled ? (
-              <Card className="sticky top-8">
-                <CardHeader>
-                  <CardTitle>You are enrolled!</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground mb-4">You have access to all content in this course.</p>
-                  <Button 
-                    onClick={() => window.location.href = `/courses/${courseId}/learn`} 
-                    className="w-full"
-                    size="lg"
-                  >
-                    Go to Course
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="sticky top-8">
-                <CardContent className="p-6">
-                  <div className="text-center mb-6">
-                    <div className="text-3xl font-bold mb-2">
-                      ${course.price}
-                      {course.originalPrice && course.originalPrice > course.price && (
-                        <span className="text-lg text-muted-foreground line-through ml-2">
-                          ${course.originalPrice}
-                        </span>
-                      )}
-                    </div>
-                    {course.originalPrice && course.originalPrice > course.price && (
-                      <Badge variant="destructive" className="mb-4">
-                        {Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)}% OFF
-                      </Badge>
-                    )}
+            <Card className="sticky top-8">
+              <CardHeader>
+                <CardTitle>{course.isEnrolled ? "You are enrolled!" : "Enroll in this course"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(() => {
+                  if (user?.id === course.instructor._id) {
+                    return (
+                      <Button asChild size="lg" className="w-full">
+                        <a href={`/instructor/courses/${course._id}/edit`}>Edit Course</a>
+                      </Button>
+                    );
+                  }
+                  if (course.isEnrolled) {
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          size="lg" 
+                          className="flex-grow"
+                          onClick={() => window.location.href = `/courses/${courseId}/learn`}
+                        >
+                          Go to Course
+                        </Button>
+                        <Button 
+                          size="lg" 
+                          variant="destructive"
+                          onClick={handleUnenroll}
+                        >
+                          Leave
+                        </Button>
+                      </div>
+                    );
+                  }
+                  if (course.isPublished) {
+                    return (
+                      <>
+                        <div className="text-center mb-6">
+                          <div className="flex items-baseline justify-center gap-2">
+                            <span className="text-3xl font-bold">${course.price}</span>
+                            {course.originalPrice && course.originalPrice > course.price && (
+                              <span className="text-lg text-muted-foreground line-through">${course.originalPrice}</span>
+                            )}
+                          </div>
+                          {course.originalPrice && course.originalPrice > course.price && (
+                            <Badge variant="destructive" className="mt-2">
+                              {Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)}% OFF
+                            </Badge>
+                          )}
+                        </div>
+                        <Button size="lg" className="w-full" onClick={handleEnroll}>
+                          Enroll Now
+                        </Button>
+                      </>
+                    );
+                  }
+                  return (
+                    <Badge variant="destructive" className="w-full justify-center py-3 text-sm">
+                      Not Available for Enrollment
+                    </Badge>
+                  );
+                })()}
+                
+                <Separator className="my-4" />
+                
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span>Course includes:</span>
                   </div>
-
-                  <Button 
-                    onClick={handleEnroll} 
-                    className="w-full mb-4"
-                    size="lg"
-                  >
-                    Enroll Now
-                  </Button>
-
-                  <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                      <span>Course includes:</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>{Math.round(course.duration / 60)} hours on-demand video</span>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{Math.round(course.duration / 60)} hours on-demand video</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span>{totalLessons} lessons</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Award className="h-4 w-4" />
-                        <span>Certificate of completion</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4" />
-                        <span>Full lifetime access</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>{totalLessons} lessons</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Award className="h-4 w-4" />
+                      <span>Certificate of completion</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Full lifetime access</span>
                     </div>
                   </div>
+                </div>
 
-                  <Separator className="my-4" />
-
-                  <div className="text-center">
-                    <p className="text-xs text-muted-foreground">
-                      30-Day Money-Back Guarantee
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                <p className="text-xs text-center text-muted-foreground mt-4">
+                  30-Day Money-Back Guarantee
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

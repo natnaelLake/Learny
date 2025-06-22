@@ -31,6 +31,7 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   const instructorName = course.instructor?.name || 'N/A';
+  console.log(course, "course");
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group flex flex-col">
       <CardHeader className="p-0">
@@ -70,28 +71,34 @@ export function CourseCard({ course }: CourseCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter className="p-4 pt-0">
+      <CardFooter className="p-4 pt-0 flex flex-col items-start w-full">
+        <div className="flex items-center justify-between w-full mb-2 text-sm text-muted-foreground">
+          {course.rating ? (
+            <div className="flex items-center">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
+              <span>{course.rating}</span>
+            </div>
+          ) : <div />}
+          <span className="text-lg font-bold text-foreground">
+            {course.price ? `$${course.price}` : 'Free'}
+          </span>
+        </div>
+
         {typeof course.progress === 'number' ? (
           <div className="w-full space-y-2">
-            <Progress value={course.progress} />
+            <Progress value={course.progress} aria-label={`${course.progress}% complete`} />
             <p className="text-xs text-muted-foreground text-center">{course.progress}% complete</p>
             <Button className="w-full mt-2" asChild>
               <Link href={`/courses/${course._id}/learn`}>Continue Learning</Link>
             </Button>
           </div>
         ) : (
-          <div className="w-full">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-2xl font-bold">${course.price || 'Free'}</span>
-              {/* Add level or other badge if available */}
-            </div>
-            <Button className="w-full" asChild>
-              <Link href={`/courses/${course._id}`}>
-                <BookOpen className="w-4 h-4 mr-2" />
-                View Course
-              </Link>
-            </Button>
-          </div>
+          <Button className="w-full" asChild>
+            <Link href={`/courses/${course._id}`}>
+              <BookOpen className="w-4 h-4 mr-2" />
+              View Course
+            </Link>
+          </Button>
         )}
       </CardFooter>
     </Card>

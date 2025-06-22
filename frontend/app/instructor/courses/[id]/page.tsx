@@ -28,7 +28,16 @@ import {
   MessageSquare,
   Award,
   Plus,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  ShieldOff,
+  Trophy,
+  Gift,
+  MessageCircle,
+  MoreHorizontal,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -68,6 +77,27 @@ interface Lesson {
   isPublished: boolean
 }
 
+interface Progress {
+  percentage: number
+  totalTimeSpent: number
+  completedLessons: string[]
+  currentLesson?: string
+}
+
+interface InstructorNote {
+  note: string
+  createdAt: string
+  createdBy: {
+    _id: string
+    name: string
+  }
+}
+
+interface Achievement {
+  type: string
+  earnedAt: string
+}
+
 interface Enrollment {
   _id: string
   student: {
@@ -77,8 +107,19 @@ interface Enrollment {
     avatar?: string
   }
   enrolledAt: string
-  progress: number
+  progress: Progress
   completedLessons: string[]
+  // Student management fields
+  points: number
+  isBlocked: boolean
+  blockedAt?: string
+  blockedBy?: {
+    _id: string
+    name: string
+  }
+  blockReason?: string
+  instructorNotes: InstructorNote[]
+  achievements: Achievement[]
 }
 
 interface Review {
@@ -108,6 +149,19 @@ export default function CourseDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
+  // Student management state
+  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null)
+  const [isPointsDialogOpen, setIsPointsDialogOpen] = useState(false)
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false)
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false)
+  const [isAchievementDialogOpen, setIsAchievementDialogOpen] = useState(false)
+  const [isStudentDetailOpen, setIsStudentDetailOpen] = useState(false)
+  const [pointsAmount, setPointsAmount] = useState(10)
+  const [pointsReason, setPointsReason] = useState('')
+  const [blockReason, setBlockReason] = useState('')
+  const [noteText, setNoteText] = useState('')
+  const [achievementText, setAchievementText] = useState('')
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -316,6 +370,118 @@ export default function CourseDetailPage() {
     }
   }
 
+  // Student management functions
+  const handleAwardPoints = async () => {
+    if (!selectedEnrollment) return
+    
+    try {
+      await api.awardPoints(selectedEnrollment._id, {
+        points: pointsAmount,
+        reason: pointsReason
+      })
+      
+      toast({
+        title: "Success",
+        description: `Awarded ${pointsAmount} points to ${selectedEnrollment.student.name}`,
+      })
+      
+      setIsPointsDialogOpen(false)
+      setPointsAmount(10)
+      setPointsReason('')
+      fetchCourseData() // Refresh data
+    } catch (error) {
+      console.error('Award points error:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to award points',
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleToggleBlock = async () => {
+    if (!selectedEnrollment) return
+    
+    try {
+      await api.toggleBlockStudent(selectedEnrollment._id, {
+        reason: blockReason
+      })
+      
+      toast({
+        title: "Success",
+        description: `Student ${selectedEnrollment.isBlocked ? 'unblocked' : 'blocked'} successfully`,
+      })
+      
+      setIsBlockDialogOpen(false)
+      setBlockReason('')
+      fetchCourseData() // Refresh data
+    } catch (error) {
+      console.error('Toggle block error:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to update student status',
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAddNote = async () => {
+    if (!selectedEnrollment || !noteText.trim()) return
+    
+    try {
+      await api.addInstructorNote(selectedEnrollment._id, {
+        note: noteText
+      })
+      
+      toast({
+        title: "Success",
+        description: "Note added successfully",
+      })
+      
+      setIsNoteDialogOpen(false)
+      setNoteText('')
+      fetchCourseData() // Refresh data
+    } catch (error) {
+      console.error('Add note error:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to add note',
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleAwardAchievement = async () => {
+    if (!selectedEnrollment || !achievementText.trim()) return
+    
+    try {
+      await api.awardAchievement(selectedEnrollment._id, {
+        achievement: achievementText
+      })
+      
+      toast({
+        title: "Success",
+        description: `Achievement "${achievementText}" awarded successfully`,
+      })
+      
+      setIsAchievementDialogOpen(false)
+      setAchievementText('')
+      fetchCourseData() // Refresh data
+    } catch (error) {
+      console.error('Award achievement error:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to award achievement',
+        variant: "destructive",
+      })
+    }
+  }
+
+  const openStudentManagement = (enrollment: Enrollment) => {
+    setSelectedEnrollment(enrollment)
+    setIsStudentDetailOpen(true)
+  }
+
   if (!isAuthenticated || user?.role !== "instructor") {
     return null
   }
@@ -323,7 +489,7 @@ export default function CourseDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        {/* <Header /> */}
         <div className="container py-8">
           <div className="flex items-center justify-center py-12">
             <div className="flex items-center space-x-2">
@@ -339,7 +505,7 @@ export default function CourseDetailPage() {
   if (error || !course) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        {/* <Header /> */}
         <div className="container py-8">
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold mb-4">Course not found</h2>
@@ -652,37 +818,69 @@ export default function CourseDetailPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Student Enrollments</CardTitle>
-                  <CardDescription>View all students enrolled in this course</CardDescription>
+                  <CardDescription>Manage your students and track their progress</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {enrollments.length > 0 ? (
                     <div className="space-y-4">
                       {enrollments.map((enrollment) => (
-                        <div key={enrollment._id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                              {enrollment.student.avatar ? (
-                                <img
-                                  src={enrollment.student.avatar}
-                                  alt={enrollment.student.name}
-                                  className="w-10 h-10 rounded-full"
-                                />
-                              ) : (
-                                <span className="text-sm font-medium">
-                                  {enrollment.student.name.charAt(0).toUpperCase()}
-                                </span>
-                              )}
+                        <div key={enrollment._id} className="border rounded-lg p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                                {enrollment.student.avatar ? (
+                                  <img
+                                    src={enrollment.student.avatar}
+                                    alt={enrollment.student.name}
+                                    className="w-10 h-10 rounded-full"
+                                  />
+                                ) : (
+                                  <span className="text-sm font-medium">
+                                    {enrollment.student.name.charAt(0).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center space-x-2">
+                                  <p className="font-medium">{enrollment.student.name}</p>
+                                  {enrollment.isBlocked && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      <Shield className="h-3 w-3 mr-1" />
+                                      Blocked
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{enrollment.student.email}</p>
+                                <div className="flex items-center space-x-4 mt-1">
+                                  <span className="text-xs text-muted-foreground">
+                                    {enrollment.progress?.percentage || 0}% complete
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {enrollment.points || 0} points
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {enrollment.achievements?.length || 0} achievements
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium">{enrollment.student.name}</p>
-                              <p className="text-sm text-muted-foreground">{enrollment.student.email}</p>
+                            <div className="flex items-center space-x-2">
+                              <div className="text-right">
+                                <p className="text-sm font-medium">
+                                  {enrollment.progress?.percentage || 0}% complete
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openStudentManagement(enrollment)}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm font-medium">{enrollment.progress}% complete</p>
-                            <p className="text-xs text-muted-foreground">
-                              Enrolled {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                            </p>
                           </div>
                         </div>
                       ))}
@@ -802,14 +1000,14 @@ export default function CourseDetailPage() {
                           <span className="text-sm">Average Progress</span>
                           <span className="font-medium">
                             {enrollments.length > 0 
-                              ? Math.round(enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length)
+                              ? Math.round(enrollments.reduce((sum, e) => sum + (e.progress?.percentage || 0), 0) / enrollments.length)
                               : 0}%
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm">Completed Course</span>
                           <span className="font-medium">
-                            {enrollments.filter(e => e.progress === 100).length}
+                            {enrollments.filter(e => e.progress?.percentage === 100).length}
                           </span>
                         </div>
                       </div>
@@ -859,6 +1057,326 @@ export default function CourseDetailPage() {
                 </Link>
               </Button>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Student Management Dialogs */}
+      
+      {/* Student Detail Dialog */}
+      <Dialog open={isStudentDetailOpen} onOpenChange={setIsStudentDetailOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5" />
+              <span>Student Management - {selectedEnrollment?.student.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Manage student progress, award points, and add notes
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedEnrollment && (
+            <div className="space-y-6">
+              {/* Student Info */}
+              <div className="flex items-center space-x-4 p-4 bg-muted rounded-lg">
+                <div className="w-16 h-16 rounded-full bg-background flex items-center justify-center">
+                  {selectedEnrollment.student.avatar ? (
+                    <img
+                      src={selectedEnrollment.student.avatar}
+                      alt={selectedEnrollment.student.name}
+                      className="w-16 h-16 rounded-full"
+                    />
+                  ) : (
+                    <span className="text-lg font-medium">
+                      {selectedEnrollment.student.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedEnrollment.student.name}</h3>
+                  <p className="text-muted-foreground">{selectedEnrollment.student.email}</p>
+                  <div className="flex items-center space-x-4 mt-2">
+                    <Badge variant={selectedEnrollment.isBlocked ? "destructive" : "default"}>
+                      {selectedEnrollment.isBlocked ? "Blocked" : "Active"}
+                    </Badge>
+                    <span className="text-sm">{selectedEnrollment.points || 0} points</span>
+                    <span className="text-sm">{selectedEnrollment.achievements?.length || 0} achievements</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="space-y-2">
+                <h4 className="font-semibold">Progress</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Completion</p>
+                    <p className="text-2xl font-bold">{selectedEnrollment.progress?.percentage || 0}%</p>
+                  </div>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Time Spent</p>
+                    <p className="text-2xl font-bold">{Math.round((selectedEnrollment.progress?.totalTimeSpent || 0) / 60)}h</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    setIsStudentDetailOpen(false)
+                    setIsPointsDialogOpen(true)
+                  }}
+                  className="flex items-center space-x-2"
+                >
+                  <Gift className="h-4 w-4" />
+                  <span>Award Points</span>
+                </Button>
+                <Button
+                  variant={selectedEnrollment.isBlocked ? "default" : "destructive"}
+                  onClick={() => {
+                    setIsStudentDetailOpen(false)
+                    setIsBlockDialogOpen(true)
+                  }}
+                  className="flex items-center space-x-2"
+                >
+                  {selectedEnrollment.isBlocked ? (
+                    <>
+                      <ShieldOff className="h-4 w-4" />
+                      <span>Unblock</span>
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="h-4 w-4" />
+                      <span>Block</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsStudentDetailOpen(false)
+                    setIsNoteDialogOpen(true)
+                  }}
+                  className="flex items-center space-x-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span>Add Note</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsStudentDetailOpen(false)
+                    setIsAchievementDialogOpen(true)
+                  }}
+                  className="flex items-center space-x-2"
+                >
+                  <Trophy className="h-4 w-4" />
+                  <span>Award Achievement</span>
+                </Button>
+              </div>
+
+              {/* Notes */}
+              {selectedEnrollment.instructorNotes && selectedEnrollment.instructorNotes.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Notes</h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {selectedEnrollment.instructorNotes.map((note, index) => (
+                      <div key={index} className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm">{note.note}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(note.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Achievements */}
+              {selectedEnrollment.achievements && selectedEnrollment.achievements.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Achievements</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEnrollment.achievements.map((achievement, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center space-x-1">
+                        <Trophy className="h-3 w-3" />
+                        <span>{achievement.type}</span>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Award Points Dialog */}
+      <Dialog open={isPointsDialogOpen} onOpenChange={setIsPointsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Gift className="h-5 w-5" />
+              <span>Award Points</span>
+            </DialogTitle>
+            <DialogDescription>
+              Award points to {selectedEnrollment?.student.name} for their performance
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Points</label>
+              <input
+                type="number"
+                min="1"
+                value={pointsAmount}
+                onChange={(e) => setPointsAmount(parseInt(e.target.value) || 0)}
+                className="w-full mt-1 p-2 border rounded-md"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Reason (optional)</label>
+              <textarea
+                value={pointsReason}
+                onChange={(e) => setPointsReason(e.target.value)}
+                placeholder="Why are you awarding these points?"
+                className="w-full mt-1 p-2 border rounded-md"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsPointsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAwardPoints}>
+              Award Points
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Block/Unblock Dialog */}
+      <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              {selectedEnrollment?.isBlocked ? (
+                <>
+                  <ShieldOff className="h-5 w-5" />
+                  <span>Unblock Student</span>
+                </>
+              ) : (
+                <>
+                  <Shield className="h-5 w-5" />
+                  <span>Block Student</span>
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedEnrollment?.isBlocked 
+                ? `Unblock ${selectedEnrollment.student.name} to restore their access`
+                : `Block ${selectedEnrollment?.student.name} from accessing the course`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Reason (optional)</label>
+              <textarea
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+                placeholder={selectedEnrollment?.isBlocked 
+                  ? "Why are you unblocking this student?"
+                  : "Why are you blocking this student?"
+                }
+                className="w-full mt-1 p-2 border rounded-md"
+                rows={3}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsBlockDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant={selectedEnrollment?.isBlocked ? "default" : "destructive"}
+              onClick={handleToggleBlock}
+            >
+              {selectedEnrollment?.isBlocked ? "Unblock" : "Block"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Note Dialog */}
+      <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <MessageCircle className="h-5 w-5" />
+              <span>Add Note</span>
+            </DialogTitle>
+            <DialogDescription>
+              Add a private note about {selectedEnrollment?.student.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Note</label>
+              <textarea
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Enter your note here..."
+                className="w-full mt-1 p-2 border rounded-md"
+                rows={4}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddNote}>
+              Add Note
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Award Achievement Dialog */}
+      <Dialog open={isAchievementDialogOpen} onOpenChange={setIsAchievementDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Trophy className="h-5 w-5" />
+              <span>Award Achievement</span>
+            </DialogTitle>
+            <DialogDescription>
+              Award an achievement to {selectedEnrollment?.student.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Achievement</label>
+              <input
+                type="text"
+                value={achievementText}
+                onChange={(e) => setAchievementText(e.target.value)}
+                placeholder="e.g., Perfect Score, Quick Learner, etc."
+                className="w-full mt-1 p-2 border rounded-md"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={() => setIsAchievementDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAwardAchievement}>
+              Award Achievement
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -200,8 +200,6 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <div className="container py-8">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Profile Header */}

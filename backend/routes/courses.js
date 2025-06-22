@@ -521,4 +521,51 @@ router.put('/:id/unpublish', protect, checkInstructor, async (req, res, next) =>
   }
 });
 
+// @desc    Get enrollments for a specific course
+// @route   GET /api/courses/:courseId/enrollments
+// @access  Private (Course instructor only)
+router.get('/:courseId/enrollments', protect, authorize('instructor', 'admin'), async (req, res, next) => {
+  try {
+    // First, verify the user is the instructor of this course
+    const course = await Course.findById(req.params.courseId);
+    if (!course || course.instructor.toString() !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'You are not authorized to view enrollments for this course.'
+      });
+    }
+
+    const enrollments = await Enrollment.find({ course: req.params.courseId })
+      .populate('student', 'name email avatar')
+      .sort({ enrolledAt: -1 });
+
+    res.json({
+      success: true,
+      count: enrollments.length,
+      data: enrollments
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get reviews for a course
+// @route   GET /api/courses/:courseId/reviews
+// @access  Public
+router.get('/:courseId/reviews', async (req, res, next) => {
+  try {
+    const reviews = await Review.find({ course: req.params.courseId })
+      .populate('student', 'name avatar')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: reviews.length,
+      data: reviews
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router; 

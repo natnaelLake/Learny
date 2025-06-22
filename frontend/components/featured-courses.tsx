@@ -29,10 +29,12 @@ interface FeaturedCoursesProps {
 }
 
 export function FeaturedCourses({ courses, isLoading }: FeaturedCoursesProps) {
+  console.log('FeaturedCourses - courses:', courses, 'isLoading:', isLoading)
+
   if (isLoading) {
     return (
       <section className="py-16 bg-muted/30">
-        <div className="container">
+        <div className="px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Featured Courses</h2>
             <p className="text-lg text-muted-foreground">
@@ -50,9 +52,30 @@ export function FeaturedCourses({ courses, isLoading }: FeaturedCoursesProps) {
     )
   }
 
+  if (!courses || courses.length === 0) {
+    return (
+      <section className="py-16 bg-muted/30">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Featured Courses</h2>
+            <p className="text-lg text-muted-foreground">
+              Discover our most popular courses and start your learning journey
+            </p>
+          </div>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-lg text-muted-foreground mb-4">No featured courses available yet</p>
+              <p className="text-sm text-muted-foreground">Check back soon for new courses!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section className="py-16 bg-muted/30">
-      <div className="container">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Featured Courses</h2>
           <p className="text-lg text-muted-foreground">
@@ -65,7 +88,7 @@ export function FeaturedCourses({ courses, isLoading }: FeaturedCoursesProps) {
             <Card key={course._id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="aspect-video overflow-hidden">
                 <img
-                  src={course.thumbnail}
+                  src={course.thumbnail || "/placeholder.svg"}
                   alt={course.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform"
                 />
@@ -86,20 +109,20 @@ export function FeaturedCourses({ courses, isLoading }: FeaturedCoursesProps) {
                 <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span>{course.rating}</span>
+                    <span>{course.rating || 0}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
-                    <span>{course.enrollmentCount}</span>
+                    <span>{course.enrollmentCount || 0}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    <span>{Math.round(course.duration / 60)}h</span>
+                    <span>{Math.round((course.duration || 0) / 60)}h</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold">${course.price}</span>
+                    <span className="text-lg font-bold">${course.price || 0}</span>
                     {course.originalPrice && course.originalPrice > course.price && (
                       <span className="text-sm text-muted-foreground line-through">
                         ${course.originalPrice}

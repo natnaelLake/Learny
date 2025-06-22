@@ -178,7 +178,7 @@ export function QuizComponent({ lessonId, courseId, quizData, onComplete, onCanc
                 totalPoints: attempt.results.totalQuestions,
                 percentage: attempt.results.score,
                 passed: attempt.results.passed,
-                answers: attempt.answers.map(answer => {
+                answers: attempt.answers.map((answer: any) => {
                   const question = finalQuizData.questions[answer.questionIndex]
                   return {
                     questionId: question?.id || '',
@@ -209,7 +209,7 @@ export function QuizComponent({ lessonId, courseId, quizData, onComplete, onCanc
               
               // Restore answers
               const restoredAnswers: Record<string, string> = {}
-              attempt.answers.forEach(answer => {
+              attempt.answers.forEach((answer: any) => {
                 const question = finalQuizData.questions[answer.questionIndex]
                 if (question) {
                   if (question.type === 'multiple-choice' && question.options) {
@@ -406,7 +406,7 @@ export function QuizComponent({ lessonId, courseId, quizData, onComplete, onCanc
           totalPoints: attempt.results.totalQuestions,
           percentage: attempt.results.score,
           passed: attempt.results.passed,
-          answers: attempt.answers.map(answer => {
+          answers: attempt.answers.map((answer: any) => {
             const question = finalQuizData.questions[answer.questionIndex]
             return {
               questionId: question?.id || '',

@@ -404,6 +404,12 @@ class ApiService {
     });
   }
 
+  async unenrollFromCourse(enrollmentId: string) {
+    return this.request<{ message: string }>(`/enrollments/${enrollmentId}`, {
+      method: 'DELETE',
+    });
+  }
+
   async cancelEnrollment(id: string) {
     return this.request<{ message: string }>(`/enrollments/${id}/cancel`, {
       method: 'PUT',
@@ -564,6 +570,39 @@ class ApiService {
 
   async getQuizStats(courseId: string) {
     return this.request<any>(`/quiz/stats/${courseId}`);
+  }
+
+  // Student Management (Instructor only)
+  async awardPoints(enrollmentId: string, pointsData: { points: number; reason?: string }) {
+    return this.request<any>(`/enrollments/${enrollmentId}/award-points`, {
+      method: 'PUT',
+      body: JSON.stringify(pointsData),
+    });
+  }
+
+  async toggleBlockStudent(enrollmentId: string, blockData?: { reason?: string }) {
+    return this.request<any>(`/enrollments/${enrollmentId}/toggle-block`, {
+      method: 'PUT',
+      body: JSON.stringify(blockData || {}),
+    });
+  }
+
+  async addInstructorNote(enrollmentId: string, noteData: { note: string }) {
+    return this.request<any>(`/enrollments/${enrollmentId}/notes`, {
+      method: 'POST',
+      body: JSON.stringify(noteData),
+    });
+  }
+
+  async awardAchievement(enrollmentId: string, achievementData: { achievement: string }) {
+    return this.request<any>(`/enrollments/${enrollmentId}/achievements`, {
+      method: 'POST',
+      body: JSON.stringify(achievementData),
+    });
+  }
+
+  async getStudentManagementData(enrollmentId: string) {
+    return this.request<any>(`/enrollments/${enrollmentId}/management`);
   }
 }
 

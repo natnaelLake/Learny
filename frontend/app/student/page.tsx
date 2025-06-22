@@ -13,8 +13,15 @@ interface EnrolledCourse {
     title: string
     thumbnail: string
     instructor: {
-      name: string
-    }
+      _id: string;
+      name: string;
+      avatar?: string;
+    };
+    price: number;
+    rating: number;
+    enrollmentCount: number;
+    duration: number;
+    level: string;
   }
   progress: {
     percentage: number
@@ -31,6 +38,7 @@ export default function MyLearningPage() {
     const fetchEnrollments = async () => {
       try {
         const response = await api.getEnrollments()
+        console.log(response, "response enrollments");
         if (response.success) {
           setEnrollments(response.data || [])
         } else {
@@ -74,7 +82,15 @@ export default function MyLearningPage() {
             <CourseCard
               key={enrollment._id}
               course={{
-                ...enrollment.course,
+                _id: enrollment.course._id,
+                title: enrollment.course.title,
+                thumbnail: enrollment.course.thumbnail,
+                instructor: enrollment.course.instructor,
+                price: enrollment.course.price,
+                rating: enrollment.course.rating,
+                enrollmentCount: enrollment.course.enrollmentCount,
+                duration: `${Math.round(enrollment.course.duration / 60)} hours`,
+                level: enrollment.course.level,
                 progress: enrollment.progress.percentage
               }}
             />

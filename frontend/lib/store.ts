@@ -6,6 +6,7 @@ interface User {
   id: string
   email: string
   name: string
+  createdAt: string | Date
   role: "student" | "instructor" | "admin"
   avatar?: string
   bio?: string
@@ -139,9 +140,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const response = await api.updateProfile(profileData)
       
-      if (response.success && response.user) {
+      if (response.success && response.data) {
         set({
-          user: response.user,
+          user: response.data,
           isLoading: false,
           error: null
         })

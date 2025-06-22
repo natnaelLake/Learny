@@ -77,6 +77,40 @@ const enrollmentSchema = new mongoose.Schema({
       default: 'pending'
     }
   },
+  // Student management fields
+  points: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  blockedAt: Date,
+  blockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  blockReason: String,
+  instructorNotes: [{
+    note: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }],
+  achievements: [{
+    type: String,
+    earnedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   notes: String
 }, {
   timestamps: true
@@ -89,7 +123,7 @@ enrollmentSchema.index({ student: 1, course: 1 }, { unique: true });
 enrollmentSchema.methods.calculateProgress = async function() {
   const Lesson = mongoose.model('Lesson');
   
-  // Get total lessons in the course
+  // Get total published lessons in the course
   const totalLessons = await Lesson.countDocuments({ 
     course: this.course, 
     isPublished: true 
@@ -108,8 +142,6 @@ enrollmentSchema.methods.calculateProgress = async function() {
     this.status = 'completed';
     this.completedAt = new Date();
   }
-  
-  await this.save();
 };
 
 // Mark lesson as completed
@@ -125,10 +157,11 @@ enrollmentSchema.methods.completeLesson = async function(lessonId, timeSpent = 0
       timeSpent
     });
     
-    this.progress.totalTimeSpent += timeSpent;
+    this.progress.totalTimeSpent += (timeSpent || 0);
     this.lastAccessedAt = new Date();
     
     await this.calculateProgress();
+    await this.save(); // Explicitly save after updating progress
   }
 };
 

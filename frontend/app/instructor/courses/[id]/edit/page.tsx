@@ -23,6 +23,7 @@ import {
   Eye
 } from "lucide-react"
 import Link from "next/link"
+import { Switch } from "@/components/ui/switch"
 
 const categories = [
   "Web Development",
@@ -57,6 +58,7 @@ interface Course {
   whatYouWillLearn: string[]
   requirements: string[]
   status: 'draft' | 'published' | 'archived'
+  isFeatured?: boolean
 }
 
 export default function EditCoursePage() {
@@ -81,7 +83,8 @@ export default function EditCoursePage() {
     thumbnail: "",
     tags: [] as string[],
     whatYouWillLearn: [] as string[],
-    requirements: [] as string[]
+    requirements: [] as string[],
+    isFeatured: false
   })
   
   const [newTag, setNewTag] = useState("")
@@ -120,7 +123,8 @@ export default function EditCoursePage() {
           thumbnail: courseData.thumbnail || "",
           tags: courseData.tags || [],
           whatYouWillLearn: courseData.whatYouWillLearn || [],
-          requirements: courseData.requirements || []
+          requirements: courseData.requirements || [],
+          isFeatured: courseData.isFeatured || false
         })
       }
     } catch (error) {
@@ -228,47 +232,10 @@ export default function EditCoursePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation
-    if (!courseData.title.trim()) {
+    if (!courseData.title || !courseData.description || !courseData.category || !courseData.level || !courseData.price) {
       toast({
-        title: "Validation error",
-        description: "Course title is required",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!courseData.description.trim()) {
-      toast({
-        title: "Validation error",
-        description: "Course description is required",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!courseData.category) {
-      toast({
-        title: "Validation error",
-        description: "Please select a category",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!courseData.level) {
-      toast({
-        title: "Validation error",
-        description: "Please select a level",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!courseData.price || parseFloat(courseData.price) < 0) {
-      toast({
-        title: "Validation error",
-        description: "Please enter a valid price",
+        title: "Missing required fields",
+        description: "Please fill in all required fields",
         variant: "destructive",
       })
       return
@@ -286,7 +253,8 @@ export default function EditCoursePage() {
         thumbnail: courseData.thumbnail,
         tags: courseData.tags,
         whatYouWillLearn: courseData.whatYouWillLearn,
-        requirements: courseData.requirements
+        requirements: courseData.requirements,
+        isFeatured: courseData.isFeatured
       })
 
       if (response.success && response.data) {
@@ -317,7 +285,7 @@ export default function EditCoursePage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        {/* <Header /> */}
         <div className="container py-8">
           <div className="flex items-center justify-center py-12">
             <div className="flex items-center space-x-2">
@@ -333,7 +301,7 @@ export default function EditCoursePage() {
   if (!course) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+        {/* <Header /> */}
         <div className="container py-8">
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold mb-4">Course not found</h2>
@@ -352,7 +320,7 @@ export default function EditCoursePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* <Header /> */}
       
       <div className="container py-8">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -499,6 +467,29 @@ export default function EditCoursePage() {
                       </Button>
                     </Label>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Course Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Course Settings</CardTitle>
+                <CardDescription>Manage course visibility and features</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="featured">Featured Course</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Featured courses appear on the homepage and get priority visibility
+                    </p>
+                  </div>
+                  <Switch
+                    id="featured"
+                    checked={courseData.isFeatured}
+                    onCheckedChange={(checked: boolean) => setCourseData(prev => ({ ...prev, isFeatured: checked }))}
+                  />
                 </div>
               </CardContent>
             </Card>

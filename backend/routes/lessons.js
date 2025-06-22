@@ -201,6 +201,13 @@ router.post('/', protect, [
 
     const lesson = await Lesson.create(lessonData);
 
+    // Add lesson to section's lessons array
+    await Section.findByIdAndUpdate(
+      req.body.section,
+      { $push: { lessons: lesson._id } },
+      { new: true, runValidators: true }
+    );
+
     res.status(201).json({
       success: true,
       data: lesson

@@ -31,20 +31,26 @@ const sectionSchema = new mongoose.Schema({
   lessonCount: {
     type: Number,
     default: 0
-  }
+  },
+  lessons: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Lesson'
+  }]
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
 // Index for efficient querying
 sectionSchema.index({ course: 1, order: 1 });
 
-// Virtual for lessons
-sectionSchema.virtual('lessons', {
+// Virtual for lessons (can be kept for other uses, but direct field is better for this case)
+/* sectionSchema.virtual('lessons', {
   ref: 'Lesson',
   localField: '_id',
   foreignField: 'section',
   justOne: false
-});
+}); */
 
 module.exports = mongoose.model('Section', sectionSchema); 

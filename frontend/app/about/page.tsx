@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, BookOpen, Award, Target, Heart, Zap } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 export default function AboutPage() {
   const stats = [
@@ -142,9 +143,11 @@ export default function AboutPage() {
               <Card key={index} className="text-center">
                 <CardContent className="pt-6">
                   <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden bg-muted">
-                    <img
+                    <Image
                       src={member.image}
                       alt={member.name}
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover"
                     />
                   </div>
