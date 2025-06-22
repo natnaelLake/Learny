@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://learny-tmll.onrender.com/api';
 
 interface ApiResponse<T> {
   success: boolean;

@@ -55,7 +55,7 @@ app.use('/api/', limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || 'https://learny-blush.vercel.app/',
   credentials: true
 }));
 
@@ -102,7 +102,7 @@ app.use(errorHandler);
 // MongoDB connection
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/learny');
+    const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb+srv://bewuketulake1212:bewuketulake_1212@learny.gexwrr3.mongodb.net/?retryWrites=true&w=majority&appName=learny');
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error('Error connecting to MongoDB:', error.message);
@@ -115,10 +115,10 @@ const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   await connectDB();
-  
+
   app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
-    console.log(`API Documentation: http://localhost:${PORT}/api/health`);
+    console.log(`API Documentation: https://learny-tmll.onrender.com:${PORT}/api/health`);
   });
 };
 
