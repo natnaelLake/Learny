@@ -19,15 +19,11 @@ export default function HomePage() {
     const fetchFeaturedCourses = async () => {
       try {
         setIsLoading(true)
-        console.log('Fetching featured courses...')
         const response = await api.getFeaturedCourses()
-        console.log('Featured courses response:', response)
         
         if (response.success && response.data) {
-          console.log('Setting featured courses:', response.data)
           setFeaturedCourses(response.data as any)
         } else {
-          console.log('No featured courses data in response')
           setFeaturedCourses([])
         }
       } catch (error) {

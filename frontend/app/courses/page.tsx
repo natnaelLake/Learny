@@ -58,7 +58,6 @@ export default function CoursesPage() {
     priceRange: [0, 200],
     sort: "newest"
   })
-  console.log(courses, "courses111111111");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 12,
@@ -107,7 +106,6 @@ export default function CoursesPage() {
       // If user is instructor and wants to see all courses, use instructor endpoint
       if (isAuthenticated && user?.role === "instructor" && showAllCourses) {
         response = await api.getInstructorCourses()
-        console.log(response, "response");
         if (response.success && response.data) {
           setCourses(response.data)
           setPagination(prev => ({ ...prev, total: response.data.length, pages: 1 }))

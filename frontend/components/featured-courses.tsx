@@ -29,8 +29,6 @@ interface FeaturedCoursesProps {
 }
 
 export function FeaturedCourses({ courses, isLoading }: FeaturedCoursesProps) {
-  console.log('FeaturedCourses - courses:', courses, 'isLoading:', isLoading)
-
   if (isLoading) {
     return (
       <section className="py-16 bg-muted/30">

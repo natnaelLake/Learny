@@ -1,8 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://learny-tmll.onrender.com/api';
 
-console.log('API_BASE_URL:', API_BASE_URL);
-console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -55,18 +52,9 @@ class ApiService {
       ...options,
     };
 
-    console.log('API: Making request to:', url, 'with config:', {
-      method: config.method || 'GET',
-      headers: config.headers,
-      body: config.body ? 'Body present' : 'No body'
-    })
-
     try {
       const response = await fetch(url, config);
       const data = await response.json();
-
-      console.log('API: Response status:', response.status, 'data:', data)
-
       if (!response.ok) {
         throw new ApiError(response.status, data.error || data.message || 'An error occurred');
       }
@@ -181,7 +169,6 @@ class ApiService {
   }
 
   async getCourse(id: string) {
-    console.log('API: Getting course with ID:', id);
     return this.request<any>(`/courses/${id}`);
   }
 
@@ -200,15 +187,11 @@ class ApiService {
     whatYouWillLearn?: string[];
     requirements?: string[];
   }) {
-    console.log('API: Creating course with data:', courseData)
-    
     try {
       const response = await this.request<any>('/courses', {
         method: 'POST',
         body: JSON.stringify(courseData),
       });
-      
-      console.log('API: Course creation response:', response);
       return response;
     } catch (error) {
       console.error('API: Course creation failed:', error);
@@ -304,15 +287,11 @@ class ApiService {
       isRequired: boolean;
     }>;
   }) {
-    console.log('API: Creating lesson with data:', lessonData);
-    
     try {
       const response = await this.request<any>('/lessons', {
         method: 'POST',
         body: JSON.stringify(lessonData),
       });
-      
-      console.log('API: Lesson creation response:', response);
       return response;
     } catch (error) {
       console.error('API: Lesson creation failed:', error);
@@ -321,7 +300,6 @@ class ApiService {
   }
 
   async updateLesson(id: string, lessonData: Partial<any>) {
-    console.log('API: Updating lesson:', id, 'with data:', lessonData);
     return this.request<any>(`/lessons/${id}`, {
       method: 'PUT',
       body: JSON.stringify(lessonData),
@@ -329,7 +307,6 @@ class ApiService {
   }
 
   async deleteLesson(id: string) {
-    console.log('API: Deleting lesson:', id);
     return this.request<{ message: string }>(`/lessons/${id}`, {
       method: 'DELETE',
     });
@@ -346,15 +323,11 @@ class ApiService {
     course: string;
     order: number;
   }) {
-    console.log('API: Creating section with data:', sectionData);
-    
     try {
       const response = await this.request<any>('/sections', {
         method: 'POST',
         body: JSON.stringify(sectionData),
       });
-      
-      console.log('API: Section creation response:', response);
       return response;
     } catch (error) {
       console.error('API: Section creation failed:', error);
@@ -363,7 +336,6 @@ class ApiService {
   }
 
   async updateSection(id: string, sectionData: Partial<any>) {
-    console.log('API: Updating section:', id, 'with data:', sectionData);
     return this.request<any>(`/sections/${id}`, {
       method: 'PUT',
       body: JSON.stringify(sectionData),
@@ -371,7 +343,6 @@ class ApiService {
   }
 
   async deleteSection(id: string) {
-    console.log('API: Deleting section:', id);
     return this.request<{ message: string }>(`/sections/${id}`, {
       method: 'DELETE',
     });
@@ -440,8 +411,6 @@ class ApiService {
 
   // Uploads
   async uploadFile(file: File) {
-    console.log('API: Uploading file:', file.name, 'size:', file.size);
-    
     const formData = new FormData();
     formData.append('file', file);
 
@@ -457,7 +426,6 @@ class ApiService {
       });
 
       const data = await response.json();
-      console.log('API: Upload response:', data);
 
       if (!response.ok) {
         throw new ApiError(response.status, data.error || 'Upload failed');

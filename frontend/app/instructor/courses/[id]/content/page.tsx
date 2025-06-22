@@ -128,21 +128,17 @@ export default function CourseContentPage() {
       setIsLoading(true)
       setError(null)
       
-      console.log('Fetching course:', courseId)
-      
       if (!courseId || courseId.length < 24) {
         throw new Error('Invalid course ID. Please check the URL.')
       }
       
       const response = await api.getCourse(courseId)
-      console.log('Course response:', response)
       
       if (response.success && response.data) {
         const courseData = {
           ...response.data,
           sections: response.data.sections || []
         }
-        console.log('Processed course data:', courseData)
         setCourse(courseData)
       } else {
         throw new Error(response.error || 'Failed to fetch course data')
@@ -175,23 +171,12 @@ export default function CourseContentPage() {
     try {
       setIsSaving(true)
       setError(null)
-      
-      console.log('Creating section with data:', {
-        title: newSection.title,
-        description: newSection.description,
-        course: courseId,
-        order: course?.sections?.length || 0
-      })
-      
       const response = await api.createSection({
         title: newSection.title,
         description: newSection.description,
         course: courseId,
         order: course?.sections?.length || 0
       })
-
-      console.log('Section creation response:', response)
-
       if (response.success) {
         toast({
           title: "Success",
@@ -203,7 +188,6 @@ export default function CourseContentPage() {
         throw new Error(response.error || 'Failed to create section')
       }
     } catch (error) {
-      console.error('Error creating section:', error)
       const errorMessage = error instanceof ApiError ? error.message : 
                           error instanceof Error ? error.message : 'Failed to add section'
       setError(errorMessage)
@@ -221,9 +205,6 @@ export default function CourseContentPage() {
     try {
       setIsSaving(true)
       setError(null)
-      
-      console.log('Updating section:', sectionId, 'with data:', data)
-      
       const response = await api.updateSection(sectionId, data)
 
       if (response.success) {
@@ -259,8 +240,6 @@ export default function CourseContentPage() {
     try {
       setIsSaving(true)
       setError(null)
-      
-      console.log('Deleting section:', sectionId)
       
       const response = await api.deleteSection(sectionId)
 
@@ -323,12 +302,8 @@ export default function CourseContentPage() {
         quizData: newLesson.quizData,
         references: newLesson.references
       }
-
-      console.log('Creating lesson with data:', lessonData)
       
       const response = await api.createLesson(lessonData)
-
-      console.log('Lesson creation response:', response)
 
       if (response.success) {
         toast({
@@ -360,8 +335,6 @@ export default function CourseContentPage() {
     try {
       setIsSaving(true)
       setError(null)
-      
-      console.log('Updating lesson:', lessonId, 'with data:', data)
       
       const response = await api.updateLesson(lessonId, data)
 
@@ -398,9 +371,6 @@ export default function CourseContentPage() {
     try {
       setIsSaving(true)
       setError(null)
-      
-      console.log('Deleting lesson:', lessonId)
-      
       const response = await api.deleteLesson(lessonId)
 
       if (response.success) {
@@ -444,9 +414,6 @@ export default function CourseContentPage() {
     try {
       setIsUploadingVideo(true)
       setError(null)
-      
-      console.log('Uploading video file:', file.name)
-      
       const response = await api.uploadFile(file)
       
       if (response.success && response.data) {

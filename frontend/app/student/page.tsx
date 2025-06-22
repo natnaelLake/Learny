@@ -38,7 +38,6 @@ export default function MyLearningPage() {
     const fetchEnrollments = async () => {
       try {
         const response = await api.getEnrollments()
-        console.log(response, "response enrollments");
         if (response.success) {
           setEnrollments(response.data || [])
         } else {

@@ -352,9 +352,6 @@ export default function CreateCoursePage() {
         whatYouWillLearn: courseData.whatYouWillLearn,
         requirements: courseData.requirements
       }
-
-      console.log('Submitting course data:', coursePayload)
-      
       const response = await api.createCourse(coursePayload)
 
       if (response.success && response.data) {

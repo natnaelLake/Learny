@@ -31,7 +31,6 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
   const instructorName = course.instructor?.name || 'N/A';
-  console.log(course, "course");
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow group flex flex-col">
       <CardHeader className="p-0">
