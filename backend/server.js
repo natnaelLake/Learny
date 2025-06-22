@@ -55,7 +55,7 @@ app.use('/api/', limiter);
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'https://learny-blush.vercel.app/',
+  origin: process.env.FRONTEND_URL || 'https://learny-blush.vercel.app',
   credentials: true
 }));
 
